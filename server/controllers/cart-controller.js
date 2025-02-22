@@ -1,74 +1,208 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
+// Add to cart
 export const addToCart = async (req, res) => {
-  const { customerID, productID, qty } = req.body;
-  
   try {
-    // หา product เพื่อคำนวณราคารวม
+    const { productID, quantity, price } = req.body;
+    const customerID = req.user.id;
+
+    // Validate input
+    if (!productID || !quantity) {
+      return res.status(400).json({ message: 'กรุณาระบุข้อมูลให้ครบถ้วน' });
+    }
+
+    // Check if product exists
     const product = await prisma.product.findUnique({
-      where: { productID },
-      include: { discounts: true }
+      where: { productID: productID }
     });
 
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ message: 'ไม่พบสินค้า' });
     }
 
-    // คำนวณราคารวม
-    const total = product.price * qty;
+    if (product.stockQuantity < quantity) {
+      return res.status(400).json({ message: 'สินค้าคงเหลือไม่เพียงพอ' });
+    }
 
-    // เช็คว่ามีสินค้านี้ในตะกร้าแล้วหรือไม่
     const existingCartItem = await prisma.cart.findFirst({
       where: {
         customerID,
-        productID
+        productID: productID
       }
     });
 
     let cartItem;
+
     if (existingCartItem) {
-      // ถ้ามีแล้วให้อัพเดทจำนวน
+      // Update quantity if item exists
       cartItem = await prisma.cart.update({
         where: { cartID: existingCartItem.cartID },
         data: {
-          qty: existingCartItem.qty + qty,
-          total: existingCartItem.total + total
-        },
-        include: { product: true }
+          qty: existingCartItem.qty + quantity,
+          total: (existingCartItem.qty + quantity) * price // ใช้ราคาที่ส่งมาจากหน้าสินค้า
+        }
       });
     } else {
-      // ถ้ายังไม่มีให้สร้างใหม่
       cartItem = await prisma.cart.create({
         data: {
           customerID,
-          productID,
-          qty,
-          total
-        },
-        include: { product: true }
+          productID: productID,
+          qty: quantity,
+          total: quantity * price // ใช้ราคาที่ส่งมาจากหน้าสินค้า
+        }
       });
     }
 
     res.json(cartItem);
+
   } catch (error) {
-    console.error('Error adding to cart:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Add to cart error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการเพิ่มสินค้าลงตะกร้า' });
   }
 };
 
-export const getCart = async (req, res) => {
-  const { customerID } = req.params;
-  
+
+// Get cart items
+export const getCartItems = async (req, res) => {
   try {
-    const cartItems = await prisma.cart.findMany({
+    const customerID = req.user.id;
+
+    const cart = await prisma.cart.findMany({
       where: { customerID },
-      include: { product: true }
+      include: {
+        product: {
+          select: {
+            productName: true,
+            price: true,
+            productImage: true,
+            stockQuantity: true,
+            discounts: {
+              where: {
+                startDate: {
+                  lte: new Date()
+                },
+                endDate: {
+                  gte: new Date()
+                }
+              },
+              orderBy: {
+                discountValue: 'desc'
+              },
+              take: 1
+            }
+          }
+        }
+      }
     });
-    
-    res.json(cartItems);
+
+    // คำนวณราคาที่รวมส่วนลดแล้ว
+    const cartWithDiscounts = cart.map(item => {
+      const activeDiscount = item.product.discounts[0];
+      let discountedPrice = item.product.price;
+      
+      if (activeDiscount) {
+        if (activeDiscount.discountType === 'percentage') {
+          discountedPrice = item.product.price * (1 - activeDiscount.discountValue / 100);
+        } else {
+          discountedPrice = item.product.price - activeDiscount.discountValue;
+        }
+      }
+
+      return {
+        ...item,
+        product: {
+          ...item.product,
+          discountedPrice,
+          activeDiscount: activeDiscount || null
+        }
+      };
+    });
+
+    res.json(cartWithDiscounts);
+
   } catch (error) {
-    console.error('Error fetching cart:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Get cart items error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูลตะกร้า' });
+  }
+};
+
+// Update cart item quantity
+export const updateCartItem = async (req, res) => {
+  try {
+    const {  quantity } = req.body;
+    const { id } = req.params;
+    const customerID = req.user.id;
+
+
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ message: 'จำนวนสินค้าไม่ถูกต้อง' });
+    }
+
+    const cartItem = await prisma.cart.findFirst({
+      where: {
+        cartID: id,
+        customerID
+      },
+      include: {
+        product: true
+      }
+    });
+
+    if (!cartItem) {
+      return res.status(404).json({ message: 'ไม่พบสินค้าในตะกร้า' });
+    }
+
+    // Check stock
+    if (cartItem.product.stock < quantity) {
+      return res.status(400).json({ message: 'สินค้าคงเหลือไม่เพียงพอ' });
+    }
+
+    // Update quantity
+    const updatedCartItem = await prisma.cart.update({
+      where: { cartID: id},
+      data: { 
+        qty: quantity
+       },
+    });
+
+    res.json({
+      message: 'อัพเดทจำนวนสินค้าสำเร็จ',
+      cartItem: updatedCartItem
+    });
+
+  } catch (error) {
+    console.error('Update cart item error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง' });
+  }
+};
+
+// Remove cart item
+export const removeCartItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const customerID = req.user.id;
+
+    const cart = await prisma.cart.findFirst({
+      where: {
+        cartID: id,
+        customerID
+      }
+    });
+
+    if (!cart) {
+      return res.status(404).json({ message: 'ไม่พบสินค้าในตะกร้า' });
+    }
+
+    // Delete cart item
+    await prisma.cart.delete({
+      where: { cartID: id }
+    });
+
+    res.json({ message: 'ลบสินค้าออกจากตะกร้าสำเร็จ' });
+
+  } catch (error) {
+    console.error('Remove cart item error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง' });
   }
 };

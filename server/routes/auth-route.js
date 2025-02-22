@@ -1,12 +1,14 @@
-// import express from 'express'
-// import { register, login, currentUser } from '../controllers/auth-controller.js'
-// import { authCheck } from '../middlewares/auth.js'
-// import { validateWithZod, registerSchema, loginSchema } from '../middlewares/validate.js'
+import express from 'express';
+const router = express.Router();
+import { register, login, currentUser } from '../controllers/auth-controller.js';
+import { authClientCheck } from '../middlewares/auth.js';
 
-// const router = express.Router()
 
-// router.post('/register', validateWithZod(registerSchema), register)
-// router.post('/login', validateWithZod(loginSchema), login)
-// router.get('/me', authCheck, currentUser)
+router.post('/register', register);
 
-// export default router
+
+router.post('/login', login);
+
+router.get('/me', authClientCheck, currentUser);
+
+export default router;

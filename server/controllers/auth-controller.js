@@ -1,105 +1,112 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 export const register = async (req, res) => {
   try {
-    const { email, firstname, lastname, password, confirmPassword } = req.body
+    const { firstname, lastname, email, password, phonenumber, address } = req.body;
 
-    // Check if user exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        email: email,
-      }
-    })
+    // Check if email already exists
+    const existingUser = await prisma.customer.findUnique({
+      where: { email }
+    });
 
     if (existingUser) {
-      return res.status(400).json({ error: 'อีเมลหรือชื่อผู้ใช้นี้ถูกใช้งานแล้ว' })
+      return res.status(400).json({ message: 'อีเมลนี้ถูกใช้งานแล้ว' });
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const user = await prisma.user.create({
+    // Create new customer
+    const newCustomer = await prisma.customer.create({
       data: {
-        email: email,
-        firstname: firstname,
-        lastname: lastname,
+        firstname,
+        lastname,
+        email,
         password: hashedPassword,
+        phonenumber,
+        address
       }
-    })
+    });
 
-    // Generate token
-    const token = jwt.sign(
-      { id: user.userID },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    )
+    // Remove password from response
+    const { password: _, ...customerData } = newCustomer;
 
     res.status(201).json({
-      token,
-      user: {
-        id: user.userID,
-        email: user.email,
-        firstname: user.firstname,
-        lastname: user.lastname
-      }
-    })
+      message: 'สมัครสมาชิกสำเร็จ',
+      customer: customerData
+    });
+
   } catch (error) {
-    console.error('Register error:', error)
-    res.status(500).json({ error: 'ไม่สามารถลงทะเบียนได้' })
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการสมัครสมาชิก' });
   }
-}
+};
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body
+    const { email, password } = req.body;
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email: email }
-    })
+    // Find user by email
+    const customer = await prisma.customer.findUnique({
+      where: { email }
+    });
 
-    if (!user) {
-      return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' })
+    if (!customer) {
+      return res.status(401).json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
     }
 
     // Check password
-    const validPassword = await bcrypt.compare(password, user.password)
+    const validPassword = await bcrypt.compare(password, customer.password);
     if (!validPassword) {
-      return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' })
+      return res.status(401).json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
     }
 
-    // Generate token
+    // Generate JWT token
     const token = jwt.sign(
-      { id: user.userID },
-      process.env.SECRET,
+      { id: customer.customerID, email: customer.email },
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
-    )
+    );
 
     res.json({
-      token,
-      user: {
-        id: user.userID,
-        email: user.email,
-        firstname: user.firstname,
-        lastname: user.lastname
-      }
-    })
+      message: 'เข้าสู่ระบบสำเร็จ',
+      token
+    });
+
   } catch (error) {
-    console.error('Login error:', error)
-    res.status(500).json({ error: 'ไม่สามารถเข้าสู่ระบบได้' })
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' });
   }
-}
+};
 
 export const currentUser = async (req, res) => {
   try {
-    res.json({ message: "Hello, current user" });
+
+
+
+    const customer = await prisma.customer.findUnique({
+      where: { customerID: req.user.id },
+      select: {
+        customerID: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        phonenumber: true,
+        address: true
+      }
+    });
+
+    if (!customer) {
+      return res.status(404).json({ message: 'ไม่พบข้อมูลผู้ใช้' });
+    }
+
+    res.json(customer);
+
   } catch (error) {
-    console.error('Get me error:', error)
-    res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลผู้ใช้ได้' })
+    console.error('Get current user error:', error);
+    res.status(500).json({ message: 'เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้' });
   }
-}
+};

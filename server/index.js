@@ -17,6 +17,8 @@ import discountRoutes from './routes/backoffice/discount-routes.js';
 import productRoutes from './routes/product-route.js';
 import cartRoutes from './routes/cart-route.js';
 import categoryRoutes from './routes/category-route.js';
+import authRoutes from './routes/auth-route.js';
+import orderRoutes from './routes/order-route.js';
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -39,8 +41,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')))
 // Client routes
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/orders", orderRoutes);
 
+// ...
 
 // Backoffice routes
 app.use("/api/backoffice/auth", backofficeAuthRouter);

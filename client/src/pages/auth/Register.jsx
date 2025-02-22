@@ -1,98 +1,239 @@
-import axios from "axios";
-import { useState } from "react";
-import { createAlert } from "../../utils/createAlert";
-// rfce
-function Register() {
-  // Javascript
-  const [value, setValue] = useState({
-    email: "",
-    firstname: "",
-    lastname: "",
-    password: "",
-    confirmPassword: "",
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { UserPlus, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+
+const Register = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    firstname: '',
+    lastname: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phonenumber: '',
+    address: ''
   });
-  const hdlOnChange = (e) => {
-    // code body
-    setValue({
-      ...value,
-      [e.target.name]: e.target.value,
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
     });
   };
 
-  const hdlSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const res = await axios.post("http://localhost:8000/api/register", value);
-      console.log(res);
+    setError('');
+    setLoading(true);
 
-      createAlert("success", "Register Success");
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError('รหัสผ่านไม่ตรงกัน');
+      setLoading(false);
+      return;
+    }
+
+    // Remove confirmPassword before sending to API
+    const { confirmPassword, ...dataToSend } = formData;
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_URL_SERVER_API}/api/auth/register`,
+        dataToSend
+      );
+      
+      // Redirect to login after successful registration
+      navigate('/login');
     } catch (error) {
-      createAlert("info", error.response.data.message);
-      console.log(error.response.data.message);
+      setError(
+        error.response?.data?.message || 
+        'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex w-full h-full justify-end">
-      <div className="w-64 border p-4 rounded-md">
-        <h1 className="text-xl font-bold text-center">Register</h1>
-
-        {/* Form */}
-        <form onSubmit={hdlSubmit}>
-          <div className="flex flex-col gap-2 py-4">
-            <input
-              placeholder="email"
-              type="text"
-              name="email"
-              className="border w-full border-gray-400 
-              rounded-md p-1 px-4"
-              onChange={hdlOnChange}
-            />
-            <input
-              placeholder="firstname"
-              type="text"
-              name="firstname"
-              className="border w-full border-gray-400 
-              rounded-md p-1 px-4"
-              onChange={hdlOnChange}
-            />
-            <input
-              placeholder="lastname"
-              type="text"
-              name="lastname"
-              className="border w-full border-gray-400 
-              rounded-md p-1 px-4"
-              onChange={hdlOnChange}
-            />
-            <input
-              placeholder="password"
-              type="text"
-              name="password"
-              className="border w-full border-gray-400 
-              rounded-md p-1 px-4"
-              onChange={hdlOnChange}
-            />
-            <input
-              placeholder="confirmPassword"
-              type="text"
-              name="confirmPassword"
-              className="border w-full border-gray-400 
-              rounded-md p-1 px-4"
-              onChange={hdlOnChange}
-            />
+    <>
+      <Header />
+      <main className="min-h-screen bg-gradient-to-br from-primary/5 to-base-100 flex items-center justify-center px-4 py-20">
+        <div className="max-w-md w-full bg-base-100 rounded-2xl shadow-2xl p-8 border border-base-200">
+          <div className="text-center mb-8">
+            <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserPlus className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-base-content">
+              สมัครสมาชิก
+            </h1>
+            <p className="text-base-content/60 mt-2">
+              สร้างบัญชีใหม่เพื่อเริ่มใช้งาน
+            </p>
           </div>
 
-          <div className="flex justify-center">
-            <button
-              className="bg-blue-500 text-white 
-            px-2 py-1 rounded-md hover:cursor-pointer"
+          {error && (
+            <div className="alert alert-error mb-6 shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    ชื่อ
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="firstname"
+                  value={formData.firstname}
+                  onChange={handleChange}
+                  placeholder="ชื่อ"
+                  className="input input-bordered w-full bg-base-100"
+                  required
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    นามสกุล
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="lastname"
+                  value={formData.lastname}
+                  onChange={handleChange}
+                  placeholder="นามสกุล"
+                  className="input input-bordered w-full bg-base-100"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  อีเมล
+                </span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="your@email.com"
+                className="input input-bordered w-full bg-base-100"
+                required
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  เบอร์โทรศัพท์
+                </span>
+              </label>
+              <input
+                type="tel"
+                name="phonenumber"
+                value={formData.phonenumber}
+                onChange={handleChange}
+                placeholder="0812345678"
+                className="input input-bordered w-full bg-base-100"
+                required
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  ที่อยู่
+                </span>
+              </label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="ที่อยู่สำหรับจัดส่ง"
+                className="textarea textarea-bordered w-full bg-base-100"
+                required
+                rows="3"
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  รหัสผ่าน
+                </span>
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="input input-bordered w-full bg-base-100"
+                required
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  ยืนยันรหัสผ่าน
+                </span>
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="input input-bordered w-full bg-base-100"
+                required
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              className={`btn btn-primary w-full ${loading ? 'loading' : ''}`}
+              disabled={loading}
             >
-              Register
+              {loading ? 'กำลังสมัครสมาชิก...' : 'สมัครสมาชิก'}
             </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          </form>
+
+          <p className="text-center mt-8 text-base-content/70">
+            มีบัญชีอยู่แล้ว?{' '}
+            <Link to="/login" className="link link-primary font-medium hover:link-primary-focus">
+              เข้าสู่ระบบ
+            </Link>
+          </p>
+        </div>
+      </main>
+      <Footer />
+    </>
   );
-}
+};
+
 export default Register;

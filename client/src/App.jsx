@@ -1,14 +1,11 @@
 import { BrowserRouter } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
-import MainLayout from './layouts/MainLayout';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
   return (
     <BrowserRouter>
-      <MainLayout>
-        <AppRoutes />
-      </MainLayout>
+      <AppRoutes />
       
       {/* Global Toast */}
       <div id="cart-toast" className="fixed top-4 right-4 hidden z-50">

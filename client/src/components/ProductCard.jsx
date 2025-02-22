@@ -1,154 +1,131 @@
-import useCartStore from '../store/cart-store';
-import { ShoppingCart, Heart, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const addToCart = useCartStore(state => state.addToCart);
 
-  const handleAddToCart = async (e) => {
-    e.stopPropagation();
+  const addToCart = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      Swal.fire({
+        title: 'กรุณาเข้าสู่ระบบ',
+        text: 'คุณต้องเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'เข้าสู่ระบบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/login';
+        }
+      });
+      return;
+    }
+
     try {
-      await addToCart(product.productID, 1);
-      document.getElementById('cart-toast').classList.remove('hidden');
-      setTimeout(() => {
-        document.getElementById('cart-toast').classList.add('hidden');
-      }, 3000);
+      await axios.post(
+        `${import.meta.env.VITE_URL_SERVER_API}/api/cart`,
+        {
+          productId: product._id,
+          qty: 1
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      Swal.fire({
+        icon: 'success',
+        title: 'เพิ่มลงตะกร้าแล้ว',
+        showConfirmButton: false,
+        timer: 1500
+      });
+
+      if (window.updateCartCount) {
+        window.updateCartCount();
+      }
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า');
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: 'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้',
+        timer: 1500
+      });
     }
   };
 
-  const calculateDiscountedPrice = () => {
-    if (!product.discounts?.length) return product.price;
-    const discount = product.discounts[0];
-    return discount.discountType === 'percentage' 
-      ? product.price * (1 - discount.discountValue / 100)
-      : product.price - discount.discountValue;
-  };
-
-  const discountedPrice = calculateDiscountedPrice();
-
   return (
     <div 
-      className="group card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-2"
+      className="group relative bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <figure className="relative overflow-hidden px-4 pt-4">
-        {/* รูปภาพสินค้า */}
-        <div className="relative w-full h-64 rounded-xl overflow-hidden">
-          {product.productImage ? (
-            <img 
-              src={product.productImage} 
-              alt={product.productName}
-              className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-in-out"
-            />
-          ) : (
-            <div className="w-full h-full bg-base-200 flex items-center justify-center">
-              <span className="text-base-content/50">ไม่มีรูปภาพ</span>
-            </div>
-          )}
-          
-          {/* Overlay with quick actions */}
-          <div 
-            className={`absolute inset-0 bg-black/40 flex items-center justify-center gap-3 transition-opacity duration-300 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.location.href = `/products/${product.productID}`;
-              }}
-              className="btn btn-circle btn-info btn-md transform hover:scale-110 transition-transform duration-200"
-              
-            >
-              <Eye className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stockQuantity === 0}
-              className="btn btn-circle btn-primary btn-md transform hover:scale-110 transition-transform duration-200"
-              title="เพิ่มลงตะกร้า"
-            >
-              <ShoppingCart className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Badge ส่วนลด */}
-        {product.discounts?.length > 0 && (
-          <div className="badge badge-error badge-lg absolute top-6 right-6 transform rotate-12 group-hover:rotate-0 transition-transform duration-300">
-            ลด {product.discounts[0].discountValue}
-            {product.discounts[0].discountType === 'percentage' ? '%' : ' ฿'}
+      {/* รูปภาพสินค้า */}
+      <Link to={`/products/${product.productID}`} className="block relative h-48">
+        <img
+          src={product.productImage}
+          alt={product.productName}
+          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+        />
+        {/* Overlay with gradient */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 ${isHovered ? 'opacity-100' : ''}`} />
+        
+        {/* ส่วนลด Badge */}
+        {product.discounts && product.discounts.length > 0 && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg">
+            {product.discounts[0].discountType === 'percentage' 
+              ? `-${product.discounts[0].discountValue}%`
+              : `-฿${product.discounts[0].discountValue.toFixed(2)}`
+            }
           </div>
         )}
-      </figure>
+      </Link>
 
-      <div className="card-body">
-        <h4 className="card-title text-base-content group-hover:text-primary transition-colors duration-300">
-          {product.productName}
-          {product.stockQuantity === 0 && (
-            <div className="badge badge-outline animate-pulse">สินค้าหมด</div>
-          )}
-        </h4>
-        
-        <p className="text-base-content/70 text-sm line-clamp-2 group-hover:text-base-content/90 transition-colors duration-300">
-          {product.description}
-        </p>
 
-        <div className="flex justify-between items-end mt-4">
-          <div className="flex items-baseline gap-2">
-            {product.discounts?.length > 0 && (
-              <span className="text-base-content/50 line-through text-sm">
+      <div className="p-3">
+        <Link to={`/products/${product.productID}`}>
+          <h3 className="text-sm font-bold mb-1 line-clamp-2 hover:text-purple-600 transition-colors">
+            {product.productName}
+          </h3>
+        </Link>
+
+        <div className="space-y-1.5">
+      
+          <div className="flex items-baseline gap-1.5">
+            {product.discounts && product.discounts.length > 0 ? (
+              <>
+                <span className="text-base font-bold text-purple-600">
+                  ฿{(product.price - product.discounts[0].discountValue).toFixed(2)}
+                </span>
+                <span className="text-xs text-gray-400 line-through">
+                  ฿{product.price.toFixed(2)}
+                </span>
+              </>
+            ) : (
+              <span className="text-base font-bold text-purple-600">
                 ฿{product.price.toFixed(2)}
               </span>
             )}
-            <span className="text-1xl font-bold text-primary group-hover:scale-110 transition-transform duration-300">
-              ฿{discountedPrice.toFixed(2)}
-            </span>
-          </div>         
-        </div>
-        <div>
-        <span className="text-sm text-base-content/70">
-            เหลือ {product.stockQuantity} ชิ้น
-          </span>
-        </div>
+          </div>
 
-        <div className="card-actions mt-4 flex gap-2">
-          <a 
-            href={`/products/${product.productID}`}
-            className="btn btn-info flex-1 gap-2"
-          >
-            <Eye className="w-5 h-5" />
-            
-          </a>
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stockQuantity === 0}
-            className={`btn flex-1 gap-2 transform transition-all duration-300 ${
-              product.stockQuantity === 0 
-                ? 'btn-disabled' 
-                : 'btn-primary hover:scale-105 hover:shadow-lg'
-            }`}
-          >
-            <ShoppingCart className={`w-5 h-5 ${!product.stockQuantity === 0 && 'group-hover:animate-bounce'}`} />
-            {product.stockQuantity === 0 ? 'สินค้าหมด' : ''}
-          </button>
-        </div>
-      </div>
-
-      {/* Toast notification */}
-      {/* <div id="cart-toast" className="toast toast-end z-50 fixed top-4 right-4 hidden">
-        <div className="alert alert-success shadow-lg">
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5" />
-            <span>เพิ่มลงตะกร้าเรียบร้อย</span>
+          <div className="flex items-center justify-between">
+            {product.stockQuantity > 0 ? (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                มีสินค้า ({product.stockQuantity})
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                สินค้าหมด
+              </span>
+            )}
           </div>
         </div>
-      </div> */}
+      </div>
     </div>
   );
 };

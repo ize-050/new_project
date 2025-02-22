@@ -1,41 +1,50 @@
-import { useEffect, useState } from "react";
-import useAuthStore from "../store/auth-store";
-import { actionCurrentUser } from "../api/auth";
+import { Navigate, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import axios from 'axios';
+import MainLayout from '../layouts/MainLayout';
+import { useUserStore } from '../store/user-store';
+const ProtectedRoute = () => {
 
-// rfce
-function ProtectRoute({ el, allows }) {
-  const [ok, setOk] = useState(null);
-  //   console.log("Hello, Protect Route");
-  //   const user = useAuthStore((state) => state.user);
-  const token = useAuthStore((state) => state.token);
+
+const { user, setUser } = useUserStore((state) => ({
+  user: state.user,
+  setUser: state.setUser
+}));
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
-    // code
-    checkPermission();
-  }, []);
+    const fetchUser = async () => {
+      if (token && !user) {
+        try {
+          const response = await axios.get(
+            `${import.meta.env.VITE_URL_SERVER_API}/api/auth/me`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setUser(response.data);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      }
+    };
 
-  const checkPermission = async () => {
-    // code body
-    // console.log("Check permission");
-    try {
-      const res = await actionCurrentUser(token);
-      // Role from back-end
-      const role = res.data.result.role;
-      //   console.log(role);
-      setOk(allows.includes(role));
-    } catch (error) {
-      console.log(error);
-      setOk(false);
-    }
-  };
-  console.log(ok);
-  if (ok === null) {
-    return <h1>Loading...</h1>;
-  }
-  if (!ok) {
-    return <h1>Unauthorized!!!</h1>;
+    fetchUser();
+  }, [token, user, setUser]);
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
 
-  return el;
-}
-export default ProtectRoute;
+  return (
+    <MainLayout>
+      <Outlet />
+    </MainLayout>
+  );
+};
+
+export default ProtectedRoute;

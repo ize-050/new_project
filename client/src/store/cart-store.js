@@ -34,8 +34,12 @@ const useCartStore = create((set, get) => ({
   fetchCart: async () => {
     set({ isLoading: true });
     try {
-      const customerID = localStorage.getItem('customerID');
-      const response = await axios.get(`http://localhost:8000/api/cart/${customerID}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:8000/api/cart`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       set({ cartItems: response.data, isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });

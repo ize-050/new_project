@@ -1,9 +1,21 @@
 import express from 'express';
-import { addToCart, getCart } from '../controllers/cart-controller.js';
+import { authClientCheck } from '../middlewares/auth.js';
+import {
+  addToCart,
+  getCartItems,
+  updateCartItem,
+  removeCartItem
+} from '../controllers/cart-controller.js';
 
 const router = express.Router();
 
+// Protect all cart routes
+router.use(authClientCheck);
+
+// Cart routes
 router.post('/', addToCart);
-router.get('/:customerID', getCart);
+router.get('/', getCartItems);
+router.put('/:id', updateCartItem);
+router.delete('/:id', removeCartItem);
 
 export default router;
