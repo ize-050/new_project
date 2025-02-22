@@ -13,6 +13,11 @@ import backofficeProductRouter from './routes/backoffice/product-routes.js';
 import backofficeCategoryRouter from './routes/backoffice/category-routes.js';
 import discountRoutes from './routes/backoffice/discount-routes.js';
 
+// Client routes
+import productRoutes from './routes/product-route.js';
+import cartRoutes from './routes/cart-route.js';
+import categoryRoutes from './routes/category-route.js';
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -24,7 +29,18 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // Serve static files from public directory
+
+
+
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')))
+
+
+
+// Client routes
+app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/categories", categoryRoutes);
+
 
 // Backoffice routes
 app.use("/api/backoffice/auth", backofficeAuthRouter);

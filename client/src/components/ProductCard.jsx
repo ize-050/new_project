@@ -1,81 +1,156 @@
-import { useState } from 'react'
-import useProductStore from '../store/product-store'
+import useCartStore from '../store/cart-store';
+import { ShoppingCart, Heart, Eye } from 'lucide-react';
+import { useState } from 'react';
 
-export default function ProductCard({ product }) {
-  const addToCart = useProductStore((state) => state.addToCart)
-  const [imageError, setImageError] = useState(false)
+const ProductCard = ({ product }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const addToCart = useCartStore(state => state.addToCart);
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'แอคชั่น': 'bg-red-100 text-red-800',
-      'แฟนตาซี': 'bg-purple-100 text-purple-800',
-      'โรแมนติก': 'bg-pink-100 text-pink-800',
-      'ตลก': 'bg-yellow-100 text-yellow-800',
-      'กีฬา': 'bg-green-100 text-green-800',
-      'ดราม่า': 'bg-blue-100 text-blue-800',
-      'ผจญภัย': 'bg-orange-100 text-orange-800',
+  const handleAddToCart = async (e) => {
+    e.stopPropagation();
+    try {
+      await addToCart(product.productID, 1);
+      document.getElementById('cart-toast').classList.remove('hidden');
+      setTimeout(() => {
+        document.getElementById('cart-toast').classList.add('hidden');
+      }, 3000);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า');
     }
-    return colors[category] || 'bg-gray-100 text-gray-800'
-  }
+  };
 
-  const handleImageError = () => {
-    setImageError(true)
-    console.error(`Failed to load image for ${product.name}:`, product.image)
-  }
+  const calculateDiscountedPrice = () => {
+    if (!product.discounts?.length) return product.price;
+    const discount = product.discounts[0];
+    return discount.discountType === 'percentage' 
+      ? product.price * (1 - discount.discountValue / 100)
+      : product.price - discount.discountValue;
+  };
+
+  const discountedPrice = calculateDiscountedPrice();
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1">
-      <div className="relative group aspect-[3/4] bg-gray-50">
-        {imageError ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-4">
-              <p className="text-gray-500 text-sm">{product.name}</p>
-              <p className="text-gray-400 text-xs mt-2">ไม่พบรูปภาพ</p>
+    <div 
+      className="group card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-2"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <figure className="relative overflow-hidden px-4 pt-4">
+        {/* รูปภาพสินค้า */}
+        <div className="relative w-full h-64 rounded-xl overflow-hidden">
+          {product.productImage ? (
+            <img 
+              src={product.productImage} 
+              alt={product.productName}
+              className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-in-out"
+            />
+          ) : (
+            <div className="w-full h-full bg-base-200 flex items-center justify-center">
+              <span className="text-base-content/50">ไม่มีรูปภาพ</span>
             </div>
-          </div>
-        ) : (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="absolute inset-0 w-full h-full object-contain"
-            onError={handleImageError}
-          />
-        )}
-        <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <button
-            onClick={() => addToCart(product)}
-            className="bg-white text-primary-600 px-4 py-2 rounded-full font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform"
+          )}
+          
+          {/* Overlay with quick actions */}
+          <div 
+            className={`absolute inset-0 bg-black/40 flex items-center justify-center gap-3 transition-opacity duration-300 ${
+              isHovered ? 'opacity-100' : 'opacity-0'
+            }`}
           >
-            เพิ่มลงตะกร้า
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `/products/${product.productID}`;
+              }}
+              className="btn btn-circle btn-info btn-md transform hover:scale-110 transition-transform duration-200"
+              
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stockQuantity === 0}
+              className="btn btn-circle btn-primary btn-md transform hover:scale-110 transition-transform duration-200"
+              title="เพิ่มลงตะกร้า"
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Badge ส่วนลด */}
+        {product.discounts?.length > 0 && (
+          <div className="badge badge-error badge-lg absolute top-6 right-6 transform rotate-12 group-hover:rotate-0 transition-transform duration-300">
+            ลด {product.discounts[0].discountValue}
+            {product.discounts[0].discountType === 'percentage' ? '%' : ' ฿'}
+          </div>
+        )}
+      </figure>
+
+      <div className="card-body">
+        <h4 className="card-title text-base-content group-hover:text-primary transition-colors duration-300">
+          {product.productName}
+          {product.stockQuantity === 0 && (
+            <div className="badge badge-outline animate-pulse">สินค้าหมด</div>
+          )}
+        </h4>
+        
+        <p className="text-base-content/70 text-sm line-clamp-2 group-hover:text-base-content/90 transition-colors duration-300">
+          {product.description}
+        </p>
+
+        <div className="flex justify-between items-end mt-4">
+          <div className="flex items-baseline gap-2">
+            {product.discounts?.length > 0 && (
+              <span className="text-base-content/50 line-through text-sm">
+                ฿{product.price.toFixed(2)}
+              </span>
+            )}
+            <span className="text-1xl font-bold text-primary group-hover:scale-110 transition-transform duration-300">
+              ฿{discountedPrice.toFixed(2)}
+            </span>
+          </div>         
+        </div>
+        <div>
+        <span className="text-sm text-base-content/70">
+            เหลือ {product.stockQuantity} ชิ้น
+          </span>
+        </div>
+
+        <div className="card-actions mt-4 flex gap-2">
+          <a 
+            href={`/products/${product.productID}`}
+            className="btn btn-info flex-1 gap-2"
+          >
+            <Eye className="w-5 h-5" />
+            
+          </a>
+          <button
+            onClick={handleAddToCart}
+            disabled={product.stockQuantity === 0}
+            className={`btn flex-1 gap-2 transform transition-all duration-300 ${
+              product.stockQuantity === 0 
+                ? 'btn-disabled' 
+                : 'btn-primary hover:scale-105 hover:shadow-lg'
+            }`}
+          >
+            <ShoppingCart className={`w-5 h-5 ${!product.stockQuantity === 0 && 'group-hover:animate-bounce'}`} />
+            {product.stockQuantity === 0 ? 'สินค้าหมด' : ''}
           </button>
         </div>
-        <div className={`absolute top-3 right-3 ${getCategoryColor(product.category)} px-3 py-1 rounded-full text-sm font-medium`}>
-          {product.category}
-        </div>
-        {product.isNewRelease && (
-          <div className="absolute top-3 left-3 bg-accent-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            เล่มใหม่
-          </div>
-        )}
       </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">{product.name}</h3>
-            <p className="text-sm text-gray-600 mb-2">โดย {product.author}</p>
-          </div>
-          <div className="text-lg font-bold text-primary-600">฿{product.price}</div>
-        </div>
-        <div className="flex items-center space-x-4 mt-3">
-          <div className="flex items-center text-sm text-gray-500">
-            <span className="mr-1">⭐</span>
-            {product.rating}
-          </div>
-          <div className="text-sm text-gray-500">
-            ขายแล้ว {product.soldCount} เล่ม
+
+      {/* Toast notification */}
+      {/* <div id="cart-toast" className="toast toast-end z-50 fixed top-4 right-4 hidden">
+        <div className="alert alert-success shadow-lg">
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5" />
+            <span>เพิ่มลงตะกร้าเรียบร้อย</span>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
-  )
-}
+  );
+};
+
+export default ProductCard;
