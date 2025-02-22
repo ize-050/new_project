@@ -25,6 +25,8 @@ export const getProducts = async (req, res) => {
 
     const currentDate = new Date()
 
+    
+
     const products = await prisma.product.findMany({
       where,
       skip,
@@ -33,10 +35,14 @@ export const getProducts = async (req, res) => {
         category: true,
         discounts: {
           where: {
-            startDate: { lte: currentDate },
-            endDate: { gte: currentDate }
+            startDate: {
+              lte: currentDate
+            },
+            endDate: {
+              gte: currentDate
+            },
+            isActive: true
           },
-          
         }
       },
     })

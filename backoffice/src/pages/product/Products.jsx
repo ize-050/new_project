@@ -1,7 +1,7 @@
 // src/pages/Products.jsx
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../../api/axios'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function Products() {
@@ -38,7 +38,7 @@ export default function Products() {
       const page = searchParams.get('page') || 1
       const search = searchParams.get('search') || ''
       
-      const response = await axios.get('http://localhost:8000/api/backoffice/products', {
+      const response = await axios.get('/api/backoffice/products', {
         params: {
           page,
           search,
@@ -92,7 +92,7 @@ export default function Products() {
     if (!window.confirm('คุณต้องการลบสินค้านี้ใช่หรือไม่?')) return
 
     try {
-      await axios.delete(`http://localhost:8000/api/backoffice/products/${productID}`, {
+      await axios.delete(`/api/backoffice/products/${productID}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -112,9 +112,27 @@ export default function Products() {
 
   const calculateDiscountedPrice = (price, discount) => {
     if (!discount) return price
+    if (!discount.startDate || !discount.endDate) return price
+
+    const now = new Date()
+    const startDate = new Date(discount.startDate)
+    const endDate = new Date(discount.endDate)
+
+    if (now < startDate || now > endDate) return price
+
     return discount.discountType === 'percentage'
       ? price - (price * discount.discountValue / 100)
       : price - discount.discountValue
+  }
+
+  const isDiscountActive = (discount) => {
+    if (!discount || !discount.startDate || !discount.endDate) return false
+
+    const now = new Date()
+    const startDate = new Date(discount.startDate)
+    const endDate = new Date(discount.endDate)
+
+    return now >= startDate && now <= endDate
   }
 
   if (loading) {
@@ -193,70 +211,75 @@ export default function Products() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
-                  <tr key={product.productID}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <img 
-                        src={product.productImage || '/placeholder.png'} 
-                        alt={product.productName}
-                        className="h-16 w-16 object-cover rounded"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {product.productName}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {product.category.categoryName}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        ฿{product.price.toLocaleString()}
-                      </div>
-                      {product.discounts?.length > 0 && (
-                        <div className="text-sm text-green-600">
-                          ฿{calculateDiscountedPrice(
-                            product.price,
-                            product.discounts[0]
-                          ).toLocaleString()}
+                {products.map((product) => {
+                  const activeDiscount = product.discounts?.find(isDiscountActive)
+                  return (
+                    <tr key={product.productID}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <img 
+                          src={product.productImage || '/placeholder.png'} 
+                          alt={product.productName}
+                          className="h-16 w-16 object-cover rounded"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {product.productName}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className={`text-sm ${
-                        product.stockQuantity < 10 ? 'text-red-600' : 'text-gray-900'
-                      }`}>
-                        {product.stockQuantity}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {product.discounts?.length > 0 ? (
-                        <div className="text-sm text-green-600">
-                          {product.discounts[0].discountType === 'percentage'
-                            ? `${product.discounts[0].discountValue}%`
-                            : `฿${product.discounts[0].discountValue}`}
+                        <div className="text-sm text-gray-500">
+                          {product.category?.categoryName}
                         </div>
-                      ) : (
-                        <div className="text-sm text-gray-500">-</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium space-x-2">
-                      <Link
-                        to={`/products/edit/${product.productID}`}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        แก้ไข
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(product.productID)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        ลบ
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={`text-sm ${activeDiscount ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          ฿{product.price.toLocaleString()}
+                        </div>
+                        {activeDiscount && (
+                          <div className="text-sm text-green-600 font-medium">
+                            ฿{calculateDiscountedPrice(product.price, activeDiscount).toLocaleString()}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={`text-sm ${
+                          product.stockQuantity < 10 ? 'text-red-600' : 'text-gray-900'
+                        }`}>
+                          {product.stockQuantity}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {activeDiscount ? (
+                          <div>
+                            <div className="text-sm text-green-600 font-medium">
+                              {activeDiscount.discountType === 'percentage'
+                                ? `${activeDiscount.discountValue}%`
+                                : `฿${activeDiscount.discountValue}`}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              ถึง {new Date(activeDiscount.endDate).toLocaleDateString('th-TH')}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-500">-</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium space-x-2">
+                        <Link
+                          to={`/products/edit/${product.productID}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          แก้ไข
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(product.productID)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          ลบ
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

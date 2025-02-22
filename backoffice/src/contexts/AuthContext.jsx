@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../api/axios'
 
 const AuthContext = createContext()
 
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/backoffice/auth/me', {
+      const response = await axios.get('/api/backoffice/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:8000/api/backoffice/auth/login', {
+      const response = await axios.post('/api/backoffice/auth/login', {
         email,
         password
       })

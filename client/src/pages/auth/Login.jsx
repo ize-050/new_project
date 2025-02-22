@@ -108,9 +108,7 @@ const Login = () => {
                   <Lock className="w-4 h-4" />
                   รหัสผ่าน
                 </span>
-                <Link to="/forgot-password" className="label-text-alt link link-primary hover:link-primary-focus">
-                  ลืมรหัสผ่าน?
-                </Link>
+               
               </label>
               <input
                 type="password"

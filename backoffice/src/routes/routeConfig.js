@@ -1,5 +1,6 @@
 // backoffice/src/routes/routeConfig.js
-import { LayoutGrid, Package, Tags, Settings } from 'lucide-react'
+import { LayoutGrid, Package, Tags, Settings, Percent } from 'lucide-react'
+
 
 export const menuItems = [
   {
@@ -21,9 +22,9 @@ export const menuItems = [
     showInMenu: true
   },
   {
-    path: '/settings',
-    name: 'ตั้งค่าระบบ',
-    icon: Settings,
+    path: '/orders',
+    name: 'จัดการออเดอร์',
+    icon: Tags,
     showInMenu: true
   }
 ]

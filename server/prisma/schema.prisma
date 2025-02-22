@@ -51,7 +51,7 @@ model Discount {
   discountID    String    @id @default(uuid())
   discountType  String    // ประเภทส่วนลด (เปอร์เซ็นต์หรือจำนวนเงิน)
   discountValue Float     // มูลค่าส่วนลด
-  description   String?   // คำอธิบายส่วนลด
+  description   String    // คำอธิบายส่วนลด
 }
 
 model ProductDiscount {

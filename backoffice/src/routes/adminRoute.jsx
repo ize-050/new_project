@@ -5,7 +5,9 @@ import Login from '../pages/Login'
 import Products from '../pages/product/Products'
 import FormProduct from '../pages/product/FormProduct'
 import Categories from '../pages/category/Categories'
-import Settings from '../pages/setting/Settings'
+
+import Discounts from '../pages/discount/Discounts'
+import Orders from '../pages/order/Orders'
 
 // Auth guard component
 const PrivateRoute = ({ children }) => {
@@ -29,7 +31,9 @@ export const AdminRoutes = () => {
         <Route path="products/add" element={<FormProduct />} />
         <Route path="products/edit/:id" element={<FormProduct />} />
         <Route path="categories" element={<Categories />} />
-        <Route path="settings" element={<Settings />} />
+        <Route path="discounts" element={<Discounts />} />
+        <Route path="orders" element={<Orders />} />
+
       </Route>
     </Routes>
   )

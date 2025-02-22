@@ -8,7 +8,9 @@ import {
   Settings,
   ChevronDown,
   Menu,
-  X
+  X,
+  Percent,
+  LogOut
 } from 'lucide-react'
 
 export default function AdminLayout() {
@@ -17,11 +19,17 @@ export default function AdminLayout() {
   const navigate = useNavigate()
 
   const menuItems = [
-    { icon: LayoutGrid, name: 'แดชบอร์ด', path: '/admin' },
     { icon: Package, name: 'จัดการสินค้า', path: '/products' },
     { icon: Tags, name: 'ประเภทสินค้า', path: '/categories' },
-    { icon: Settings, name: 'ตั้งค่าระบบ', path: '/settings' },
+    { icon: Percent, name: 'จัดการส่วนลด', path: '/discounts' },
+    { icon: Percent, name: 'จัดการออเดอร์', path: '/orders' },
+   
   ]
+
+  const handleLogout = () => {
+    localStorage.clear()
+    navigate('/login')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -55,6 +63,15 @@ export default function AdminLayout() {
               </li>
             ))}
           </ul>
+          <div className="mt-auto border-t p-4">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut size={20} />
+              <span>ออกจากระบบ</span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -80,8 +97,8 @@ export default function AdminLayout() {
                   alt="Admin"
                   className="w-8 h-8 rounded-full"
                 />
-                <span>แอดมิน</span>
-                <ChevronDown className="w-4 h-4" />
+                <span>Admin</span>
+               
               </button>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../../api/axios'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function AddProduct() {
@@ -31,7 +31,7 @@ export default function AddProduct() {
 
   const fetchProduct = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/backoffice/products/${id}`, {
+      const response = await axios.get(`/api/backoffice/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const product = response.data
@@ -64,10 +64,10 @@ export default function AddProduct() {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/backoffice/categories', {
+      const response = await axios.get('/api/backoffice/categories', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      setCategories(response.data)
+      setCategories(response.data.categories || [])
     } catch (err) {
       console.error('Error fetching categories:', err)
     }
@@ -75,19 +75,28 @@ export default function AddProduct() {
 
   const fetchDiscounts = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/backoffice/discounts', {
+      const response = await axios.get('/api/backoffice/discounts', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      setDiscounts(response.data)
+      console.log('Discount response:', response.data)
+      if (Array.isArray(response.data)) {
+        setDiscounts(response.data)
+      } else if (Array.isArray(response.data.discounts)) {
+        setDiscounts(response.data.discounts)
+      } else {
+        console.error('Unexpected discount data format:', response.data)
+        setDiscounts([])
+      }
     } catch (err) {
       console.error('Error fetching discounts:', err)
+      setDiscounts([])
     }
   }
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
-      setFormData({ ...formData, productImage: file })
+      setFormData(prev => ({ ...prev, productImage: file }))
       setPreview(URL.createObjectURL(file))
     }
   }
@@ -95,7 +104,7 @@ export default function AddProduct() {
   const handleDiscountChange = (e) => {
     const discountId = e.target.value
     if (!discountId) {
-      setFormData({ ...formData, discounts: [] })
+      setFormData(prev => ({ ...prev, discounts: [] }))
       return
     }
 
@@ -105,8 +114,8 @@ export default function AddProduct() {
       const nextMonth = new Date()
       nextMonth.setMonth(nextMonth.getMonth() + 1)
 
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         discounts: [{
           discountID: discountId,
           discountType: selectedDiscount.discountType,
@@ -114,7 +123,7 @@ export default function AddProduct() {
           startDate: today.toISOString().split('T')[0],
           endDate: nextMonth.toISOString().split('T')[0]
         }]
-      })
+      }))
     }
   }
 
@@ -126,7 +135,7 @@ export default function AddProduct() {
       } else {
         updatedDiscount.endDate = value
       }
-      setFormData({ ...formData, discounts: [updatedDiscount] })
+      setFormData(prev => ({ ...prev, discounts: [updatedDiscount] }))
     }
   }
 
@@ -148,7 +157,7 @@ export default function AddProduct() {
 
       if (id) {
         // Update existing product
-        await axios.put(`http://localhost:8000/api/backoffice/products/${id}`, form, {
+        await axios.put(`/api/backoffice/products/${id}`, form, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -156,7 +165,7 @@ export default function AddProduct() {
         })
       } else {
         // Create new product
-        await axios.post('http://localhost:8000/api/backoffice/products', form, {
+        await axios.post('/api/backoffice/products', form, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -192,7 +201,7 @@ export default function AddProduct() {
                   type="button"
                   onClick={() => {
                     setPreview(null)
-                    setFormData({ ...formData, productImage: null })
+                    setFormData(prev => ({ ...prev, productImage: null }))
                   }}
                   className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
                 >
@@ -214,7 +223,7 @@ export default function AddProduct() {
           <input
             type="text"
             value={formData.productName}
-            onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
             className="w-full border p-2 rounded"
             required
           />
@@ -224,7 +233,7 @@ export default function AddProduct() {
           <label className="block mb-2">รายละเอียด</label>
           <textarea
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             className="w-full border p-2 rounded"
             rows="4"
             required
@@ -236,7 +245,7 @@ export default function AddProduct() {
           <input
             type="number"
             value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
             className="w-full border p-2 rounded"
             required
             min="0"
@@ -249,7 +258,7 @@ export default function AddProduct() {
           <input
             type="number"
             value={formData.stockQuantity}
-            onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: e.target.value }))}
             className="w-full border p-2 rounded"
             required
             min="0"
@@ -260,7 +269,7 @@ export default function AddProduct() {
           <label className="block mb-2">หมวดหมู่</label>
           <select
             value={formData.categoryID}
-            onChange={(e) => setFormData({ ...formData, categoryID: e.target.value })}
+            onChange={(e) => setFormData(prev => ({ ...prev, categoryID: e.target.value }))}
             className="w-full border p-2 rounded"
             required
           >
@@ -283,7 +292,7 @@ export default function AddProduct() {
             <option value="">ไม่มีส่วนลด</option>
             {discounts.map((discount) => (
               <option key={discount.discountID} value={discount.discountID}>
-                {discount.name} - {discount.discountType === 'percentage' 
+                {discount.description} - {discount.discountType === 'percentage' 
                   ? `${discount.discountValue}%` 
                   : `${discount.discountValue} บาท`}
               </option>

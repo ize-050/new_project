@@ -1,19 +1,52 @@
-// server/controllers/backoffice/category.controller.js
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-export const getAllCategories = async (req, res, next) => {
+export const getCategories = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+    const search = req.query.search || ''
+    const skip = (page - 1) * limit
+
+    const where = search ? {
+      categoryName: {
+        contains: search.toLowerCase()
+      }
+    } : {}
+
+    const totalItems = await prisma.category.count({ where })
+    const totalPages = Math.ceil(totalItems / limit)
+
     const categories = await prisma.category.findMany({
+      where,
+      skip,
+      take: limit,
       include: {
-        products: true
+        _count: {
+          select: { products: true }
+        }
+      },
+      orderBy: {
+        categoryName: 'asc'
       }
     })
 
-    res.json(categories)
+    const formattedCategories = categories.map(category => ({
+      ...category,
+      productCount: category._count.products
+    }))
+
+    res.json({
+      categories: formattedCategories,
+      totalPages,
+      totalItems,
+      currentPage: page,
+      itemsPerPage: limit
+    })
   } catch (error) {
-    next(error)
+    console.error('Error getting categories:', error)
+    res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลได้' })
   }
 }
 
@@ -33,75 +66,94 @@ export const getCategory = async (req, res, next) => {
 
     res.json(category)
   } catch (error) {
-    next(error)
+    console.error('Error getting category:', error)
+    res.status(500).json({ error: 'ไม่สามารถดึงข้อมูลได้' })
   }
 }
 
-export const createCategory = async (req, res, next) => {
+export const createCategory = async (req, res) => {
   try {
-    const { categoryName, description } = req.body
+    const { categoryName } = req.body
 
-    // Check if category exists
+    if (!categoryName || categoryName.trim() === '') {
+      return res.status(400).json({ error: 'กรุณากรอกชื่อหมวดหมู่' })
+    }
+
+    const normalizedName = categoryName.trim().toLowerCase()
+
+    // ตรวจสอบว่ามีชื่อหมวดหมู่นี้อยู่แล้วหรือไม่
     const existingCategory = await prisma.category.findFirst({
-      where: { categoryName }
+      where: { 
+        categoryName: {
+          equals: normalizedName
+        }
+      }
     })
 
     if (existingCategory) {
-      return res.status(400).json({ error: 'Category name already exists' })
+      return res.status(400).json({ error: 'มีชื่อหมวดหมู่นี้อยู่แล้ว' })
     }
 
     const category = await prisma.category.create({
-      data: {
-        categoryName,
-        description
+      data: { 
+        categoryName: normalizedName
       }
     })
 
     res.status(201).json(category)
   } catch (error) {
-    next(error)
+    console.error('Error creating category:', error)
+    res.status(500).json({ error: 'ไม่สามารถสร้างหมวดหมู่ได้' })
   }
 }
 
-export const updateCategory = async (req, res, next) => {
+export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params
-    const { categoryName, description } = req.body
+    const { categoryName } = req.body
 
-    // Check if category exists
+    if (!categoryName || categoryName.trim() === '') {
+      return res.status(400).json({ error: 'กรุณากรอกชื่อหมวดหมู่' })
+    }
+
+    const normalizedName = categoryName.trim().toLowerCase()
+
+    // ตรวจสอบว่ามีชื่อหมวดหมู่นี้อยู่แล้วหรือไม่ (ยกเว้นตัวเอง)
     const existingCategory = await prisma.category.findFirst({
-      where: { 
-        categoryName,
+      where: {
+        categoryName: {
+          equals: normalizedName
+        },
         NOT: { categoryID: id }
       }
     })
 
     if (existingCategory) {
-      return res.status(400).json({ error: 'Category name already exists' })
+      return res.status(400).json({ error: 'มีชื่อหมวดหมู่นี้อยู่แล้ว' })
     }
 
     const category = await prisma.category.update({
       where: { categoryID: id },
-      data: {
-        categoryName,
-        description
+      data: { 
+        categoryName: normalizedName
       }
     })
 
     res.json(category)
   } catch (error) {
+    console.error('Error updating category:', error)
     if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Category not found' })
+      return res.status(404).json({ error: 'ไม่พบหมวดหมู่ที่ต้องการแก้ไข' })
     }
-    next(error)
+    res.status(500).json({ error: 'ไม่สามารถอัพเดทหมวดหมู่ได้' })
   }
 }
 
-export const deleteCategory = async (req, res, next) => {
+export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params
 
-    // Check if category has products
+    // ตรวจสอบว่ามีสินค้าในหมวดหมู่หรือไม่
     const category = await prisma.category.findUnique({
       where: { categoryID: id },
       include: {
@@ -112,21 +164,22 @@ export const deleteCategory = async (req, res, next) => {
     })
 
     if (!category) {
-      return res.status(404).json({ error: 'Category not found' })
+      return res.status(404).json({ error: 'ไม่พบหมวดหมู่ที่ต้องการลบ' })
     }
 
     if (category._count.products > 0) {
-      return res.status(400).json({ 
-        error: 'Cannot delete category with products. Please remove or move products first.' 
-      })
+      return res.status(400).json({ error: 'ไม่สามารถลบหมวดหมู่ที่มีสินค้าอยู่ได้' })
     }
 
     await prisma.category.delete({
       where: { categoryID: id }
     })
-
-    res.json({ message: 'Category deleted successfully' })
+    res.json({ message: 'ลบหมวดหมู่เรียบร้อย' })
   } catch (error) {
-    next(error)
+    console.error('Error deleting category:', error)
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'ไม่พบหมวดหมู่ที่ต้องการลบ' })
+    }
+    res.status(500).json({ error: 'ไม่สามารถลบหมวดหมู่ได้' })
   }
 }

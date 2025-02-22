@@ -26,8 +26,8 @@ export default function Login() {
       
       // ตั้งค่า default headers สำหรับ axios requests
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      
-      navigate('/')
+
+      navigate('/products')
     } catch (error) {
       setError(error.response?.data?.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ')
     } finally {
