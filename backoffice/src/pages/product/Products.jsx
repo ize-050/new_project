@@ -155,7 +155,6 @@ export default function Products() {
         </Link>
       </div>
 
-      {/* Search Form */}
       <form onSubmit={handleSearch} className="mb-6">
         <div className="flex gap-2">
           <input
@@ -284,7 +283,7 @@ export default function Products() {
             </table>
           </div>
 
-          {/* Pagination */}
+ 
           <div className="mt-4 flex justify-between items-center">
             <div className="text-sm text-gray-700">
               แสดง {products.length} รายการ จากทั้งหมด {pagination.totalItems} รายการ

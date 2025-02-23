@@ -12,7 +12,7 @@ const Cart = () => {
   const [showCheckout, setShowCheckout] = useState(false);
   const [address, setAddress] = useState('');
 
-  // Fetch cart items
+  
   const fetchCartItems = async () => {
     try {
       const response = await axios.get(
@@ -25,7 +25,7 @@ const Cart = () => {
       );
       setCartItems(response.data);
       setLoading(false);
-      // อัพเดทจำนวนสินค้าในตะกร้าที่ Header
+    
       if (window.updateCartCount) {
         window.updateCartCount();
       }
@@ -66,7 +66,7 @@ const Cart = () => {
     }
   };
 
-  // Remove item
+
   const removeItem = async (cartItemID) => {
     try {
       await Swal.fire({
@@ -88,7 +88,7 @@ const Cart = () => {
               }
             }
           );
-          fetchCartItems(); // Refresh cart items
+          fetchCartItems(); 
           Swal.fire({
             icon: 'success',
             title: 'ลบสินค้าสำเร็จ',
@@ -109,12 +109,12 @@ const Cart = () => {
     }
   };
 
-  // Calculate total
+ 
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + (item.qty * (item.product.discountedPrice || item.product.price)), 0);
   };
 
-  // Handle checkout
+
   const handleCheckout = async () => {
     if (!showCheckout) {
       setShowCheckout(true);
@@ -203,7 +203,7 @@ const Cart = () => {
       </h1>
       
       <div className="grid md:grid-cols-3 gap-8">
-        {/* Cart Items */}
+       
         <div className="md:col-span-2 space-y-4">
           {cartItems.map((item) => (
             <div key={item.cartID} className="card card-side bg-base-100 shadow-xl">
@@ -283,7 +283,7 @@ const Cart = () => {
           ))}
         </div>
 
-        {/* Order Summary */}
+
         <div className="card bg-base-100 shadow-xl h-fit">
           <div className="card-body">
             <h2 className="card-title">สรุปคำสั่งซื้อ</h2>

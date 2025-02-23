@@ -156,7 +156,7 @@ export default function AddProduct() {
       }
 
       if (id) {
-        // Update existing product
+       
         await axios.put(`/api/backoffice/products/${id}`, form, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -164,7 +164,7 @@ export default function AddProduct() {
           }
         })
       } else {
-        // Create new product
+        
         await axios.post('/api/backoffice/products', form, {
           headers: {
             Authorization: `Bearer ${token}`,

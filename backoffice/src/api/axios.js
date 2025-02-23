@@ -1,15 +1,13 @@
 import axios from 'axios';
 
-// สร้าง axios instance
+
 const instance = axios.create({
-  baseURL: 'http://localhost:8000', // หรือ URL ของ API ของคุณ
-  timeout: 5000,
+  baseURL: 'http://localhost:8000', 
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Add a request interceptor
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -23,7 +21,6 @@ instance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
 instance.interceptors.response.use(
   (response) => response,
   (error) => {

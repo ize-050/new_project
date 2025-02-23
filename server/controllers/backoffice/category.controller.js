@@ -81,7 +81,7 @@ export const createCategory = async (req, res) => {
 
     const normalizedName = categoryName.trim().toLowerCase()
 
-    // ตรวจสอบว่ามีชื่อหมวดหมู่นี้อยู่แล้วหรือไม่
+    
     const existingCategory = await prisma.category.findFirst({
       where: { 
         categoryName: {
@@ -118,7 +118,7 @@ export const updateCategory = async (req, res) => {
 
     const normalizedName = categoryName.trim().toLowerCase()
 
-    // ตรวจสอบว่ามีชื่อหมวดหมู่นี้อยู่แล้วหรือไม่ (ยกเว้นตัวเอง)
+    
     const existingCategory = await prisma.category.findFirst({
       where: {
         categoryName: {
@@ -153,7 +153,7 @@ export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params
 
-    // ตรวจสอบว่ามีสินค้าในหมวดหมู่หรือไม่
+   
     const category = await prisma.category.findUnique({
       where: { categoryID: id },
       include: {

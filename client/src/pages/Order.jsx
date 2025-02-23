@@ -149,9 +149,9 @@ const Orders = () => {
                                 <div className="text-right">
                                     <p className="text-lg font-semibold">฿{order.totalAmount.toFixed(2)}</p>
                                     <span className={`badge ${order.status === 'pending' ? 'badge-warning' :
-                                            order.status === 'paid' ? 'badge-info' :
-                                                order.status === 'completed' ? 'badge-success' :
-                                                    'badge-error'
+                                        order.status === 'paid' ? 'badge-info' :
+                                            order.status === 'completed' ? 'badge-success' :
+                                                'badge-error'
                                         }`}>
                                         {order.status === 'pending' ? 'รอชำระเงิน' :
                                             order.status === 'paid' ? 'รอตรวจสอบ' :

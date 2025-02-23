@@ -301,7 +301,7 @@ const Orders = () => {
         </table>
       </div>
 
-      {/* Pagination */}
+  
       <div className="flex justify-center mt-6">
         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -320,7 +320,7 @@ const Orders = () => {
         </nav>
       </div>
 
-      {/* Order Details Modal */}
+  
       {showModal && (
         <OrderDetailsModal
           order={selectedOrder}

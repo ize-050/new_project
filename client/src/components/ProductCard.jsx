@@ -7,75 +7,23 @@ import Swal from 'sweetalert2';
 const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  const addToCart = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      Swal.fire({
-        title: 'กรุณาเข้าสู่ระบบ',
-        text: 'คุณต้องเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'เข้าสู่ระบบ',
-        cancelButtonText: 'ยกเลิก'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          window.location.href = '/login';
-        }
-      });
-      return;
-    }
-
-    try {
-      await axios.post(
-        `${import.meta.env.VITE_URL_SERVER_API}/api/cart`,
-        {
-          productId: product._id,
-          qty: 1
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      Swal.fire({
-        icon: 'success',
-        title: 'เพิ่มลงตะกร้าแล้ว',
-        showConfirmButton: false,
-        timer: 1500
-      });
-
-      if (window.updateCartCount) {
-        window.updateCartCount();
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'เกิดข้อผิดพลาด',
-        text: 'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้',
-        timer: 1500
-      });
-    }
-  };
-
   return (
     <div 
       className="group relative bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* รูปภาพสินค้า */}
+     
       <Link to={`/products/${product.productID}`} className="block relative h-48">
         <img
           src={product.productImage}
           alt={product.productName}
           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
-        {/* Overlay with gradient */}
+       
         <div className={`absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 ${isHovered ? 'opacity-100' : ''}`} />
         
-        {/* ส่วนลด Badge */}
+      
         {product.discounts && product.discounts.length > 0 && (
           <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg">
             {product.discounts[0].discountType === 'percentage' 

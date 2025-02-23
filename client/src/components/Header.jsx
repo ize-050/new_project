@@ -112,7 +112,7 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Main Header */}
+  
       <div className="bg-base-100">
         <div className="container mx-auto">
           <div className="flex h-20 items-center gap-8 px-4">
@@ -125,7 +125,7 @@ const Header = () => {
               Anime Spirit
             </Link>
 
-            {/* Search Bar */}
+         
             <div className="flex-1 max-w-2xl">
               <form onSubmit={handleSearch}>
                 <div className="join w-full">
@@ -146,7 +146,7 @@ const Header = () => {
               </form>
             </div>
 
-            {/* Navigation */}
+      
             <nav className="hidden md:flex items-center gap-4">
               <Link 
                 to="/" 
@@ -177,7 +177,7 @@ const Header = () => {
               </Link>
             </nav>
 
-            {/* Mobile Menu Button */}
+            
             <button className="btn btn-square btn-ghost md:hidden">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" />

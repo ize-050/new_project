@@ -119,7 +119,6 @@ export const getProductById = async (req, res) => {
     if (activeDiscount) {
       if (activeDiscount.discountType === 'percentage') {
         product.discountedPrice = product.price * (1 - activeDiscount.discountValue / 100);
-        
       } else {
         product.discountedPrice = product.price - activeDiscount.discountValue;
       }

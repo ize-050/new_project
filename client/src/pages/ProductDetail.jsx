@@ -93,7 +93,6 @@ const ProductDetail = () => {
         }
       });
 
-      // อัพเดทจำนวนสินค้าในตะกร้าที่ Header
       if (window.updateCartCount) {
         window.updateCartCount();
       }
@@ -140,7 +139,7 @@ const ProductDetail = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Product Image */}
+
         <div className="aspect-square rounded-2xl overflow-hidden relative">
           <img
             src={product.productImage}
@@ -155,7 +154,7 @@ const ProductDetail = () => {
           )}
         </div>
 
-        {/* Product Info */}
+        
         <div className="space-y-6">
           <h1 className="text-3xl font-bold">{product.productName}</h1>
           
@@ -197,7 +196,7 @@ const ProductDetail = () => {
           <p className="text-base-content/80">{product.description}</p>
 
           <div className="space-y-4">
-            {/* Quantity Selector */}
+            
             <div className="flex items-center gap-4">
               <span className="font-medium">จำนวน:</span>
               <div className="join">
@@ -224,7 +223,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Add to Cart Button */}
+         
             <button
               className="btn btn-primary w-full gap-2"
               onClick={handleAddToCart}
@@ -235,7 +234,7 @@ const ProductDetail = () => {
             </button>
           </div>
 
-          {/* Additional Info */}
+    
           <div className="divider"></div>
           <div className="space-y-2">
             <h3 className="font-medium">รายละเอียดสินค้า</h3>

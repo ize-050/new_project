@@ -6,7 +6,7 @@ import { Sword, Heart, Star, Zap, Flame, Ghost, Coffee } from 'lucide-react';
 const CategoryMenu = () => {
   const [categories, setCategories] = useState([]);
 
-  // Map icons to categories
+
   const categoryIcons = {
     'Action': <Sword className="w-5 h-5" />,
     'Romance': <Heart className="w-5 h-5" />,

@@ -1,18 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-// Add to cart
+
 export const addToCart = async (req, res) => {
   try {
     const { productID, quantity, price } = req.body;
     const customerID = req.user.id;
 
-    // Validate input
+
     if (!productID || !quantity) {
       return res.status(400).json({ message: 'กรุณาระบุข้อมูลให้ครบถ้วน' });
     }
 
-    // Check if product exists
+ 
     const product = await prisma.product.findUnique({
       where: { productID: productID }
     });
@@ -35,7 +35,7 @@ export const addToCart = async (req, res) => {
     let cartItem;
 
     if (existingCartItem) {
-      // Update quantity if item exists
+      
       cartItem = await prisma.cart.update({
         where: { cartID: existingCartItem.cartID },
         data: {
@@ -63,7 +63,7 @@ export const addToCart = async (req, res) => {
 };
 
 
-// Get cart items
+
 export const getCartItems = async (req, res) => {
   try {
     const customerID = req.user.id;
@@ -127,7 +127,7 @@ export const getCartItems = async (req, res) => {
   }
 };
 
-// Update cart item quantity
+
 export const updateCartItem = async (req, res) => {
   try {
     const {  quantity } = req.body;
@@ -153,12 +153,11 @@ export const updateCartItem = async (req, res) => {
       return res.status(404).json({ message: 'ไม่พบสินค้าในตะกร้า' });
     }
 
-    // Check stock
+  
     if (cartItem.product.stock < quantity) {
       return res.status(400).json({ message: 'สินค้าคงเหลือไม่เพียงพอ' });
     }
 
-    // Update quantity
     const updatedCartItem = await prisma.cart.update({
       where: { cartID: id},
       data: { 
@@ -177,7 +176,6 @@ export const updateCartItem = async (req, res) => {
   }
 };
 
-// Remove cart item
 export const removeCartItem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -194,7 +192,6 @@ export const removeCartItem = async (req, res) => {
       return res.status(404).json({ message: 'ไม่พบสินค้าในตะกร้า' });
     }
 
-    // Delete cart item
     await prisma.cart.delete({
       where: { cartID: id }
     });

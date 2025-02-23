@@ -8,7 +8,7 @@ export const register = async (req, res) => {
   try {
     const { email, username, password, confirmPassword } = req.body
 
-    // Check if user exists
+  
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
@@ -17,10 +17,10 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: 'อีเมลนี้ถูกใช้งานแล้ว' })
     }
 
-    // Hash password
+ 
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
+ 
     const user = await prisma.user.create({
       data: {
         email,
@@ -29,7 +29,7 @@ export const register = async (req, res) => {
       }
     })
 
-    // Generate token
+  
     const token = jwt.sign(
       { email: user.email },
       process.env.JWT_SECRET,
@@ -66,7 +66,6 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' })
     }
 
-    // Generate token
     const token = jwt.sign(
       { email: user.email },
       process.env.JWT_SECRET,
